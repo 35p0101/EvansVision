@@ -1,0 +1,25 @@
+# Normalizzazione line endings
+* text=auto eol=lf
+
+# Script shell DEVONO essere LF (altrimenti non funzionano nei container Linux)
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Dockerfile sempre LF
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
+
+# Binari - non toccare
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pkl binary
+*.keras binary
+*.h5 binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary

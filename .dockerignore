@@ -1,0 +1,15 @@
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.next/
+dist/
+build/
+*.keras
+*.pkl
+*.h5
+.env.local
+.git/
+.DS_Store
+*.log

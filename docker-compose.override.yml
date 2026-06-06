@@ -1,0 +1,32 @@
+# Configurazione DEV - sovrascrive docker-compose.yml automaticamente
+# Per usare prod: `docker compose -f docker-compose.yml up`
+# Per usare dev (default): `docker compose up`
+
+services:
+  ai-service:
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - ./ai-service:/app
+      - ai_models:/app/saved_models
+      - ai_datasets:/app/datasets
+    environment:
+      ALLOWED_ORIGINS: "*"
+
+  backend:
+    environment:
+      NODE_ENV: development
+    # In dev puoi sostituire il CMD per usare ts-node:
+    # command: ["npm", "run", "dev"]
+    # volumes:
+    #   - ./backend/src:/app/src
+    #   - ./backend/prisma:/app/prisma
+
+  frontend:
+    environment:
+      NODE_ENV: development
+    # Per hot reload del frontend in dev:
+    # command: ["npm", "run", "dev"]
+    # volumes:
+    #   - ./apps/frontend:/app
+    #   - /app/node_modules
+    #   - /app/.next

@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Team {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  league    String?
+  country   String?
+  logo      String?
+  eloRating Float    @default(1500) @map("elo_rating")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  homeMatches      Match[]       @relation("HomeTeam")
+  awayMatches      Match[]       @relation("AwayTeam")
+  homePredictions  Prediction[]  @relation("PredictionHomeTeam")
+  awayPredictions  Prediction[]  @relation("PredictionAwayTeam")
+  statistics       TeamStatistics?
+  eloHistory       EloHistory[]
+
+  @@map("teams")
+}
+
+model Match {
+  id        String   @id @default(uuid())
+  homeTeamId String  @map("home_team_id")
+  awayTeamId String  @map("away_team_id")
+  homeGoals Int?     @map("home_goals")
+  awayGoals Int?     @map("away_goals")
+  date      DateTime
+  competition String?
+  season    String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  homeTeam  Team  @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam  Team  @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  stats     MatchStats?
+
+  @@map("matches")
+}
+
+model Prediction {
+  id             String   @id @default(uuid())
+  matchId        String   @unique @map("match_id")
+  homeTeamId     String   @map("home_team_id")
+  awayTeamId     String   @map("away_team_id")
+  homeProbability Float   @map("home_probability")
+  drawProbability Float   @map("draw_probability")
+  awayProbability Float   @map("away_probability")
+  confidence     Float
+  predictedResult String  @map("predicted_result")
+  predictedScore String?  @map("predicted_score")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  homeTeam Team @relation("PredictionHomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam Team @relation("PredictionAwayTeam", fields: [awayTeamId], references: [id])
+
+  @@map("predictions")
+}
+
+model TeamStatistics {
+  id           String   @id @default(uuid())
+  teamId       String   @unique @map("team_id")
+  xg           Float    @default(0)
+  xga          Float    @default(0)
+  shots        Float    @default(0)
+  possession   Float    @default(50)
+  formPoints   Float    @default(0) @map("form_points")
+  winRate      Float    @default(0) @map("win_rate")
+  ptsLast5     Float    @default(0) @map("pts_last_5")
+  ptsLast10    Float    @default(0) @map("pts_last_10")
+  gfLast5      Float    @default(0) @map("gf_last_5")
+  gfLast10     Float    @default(0) @map("gf_last_10")
+  gaLast5      Float    @default(0) @map("ga_last_5")
+  gaLast10     Float    @default(0) @map("ga_last_10")
+  ewma         Float    @default(0)
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  team Team @relation(fields: [teamId], references: [id])
+
+  @@map("team_statistics")
+}
+
+model MatchStats {
+  id         String  @id @default(uuid())
+  matchId    String  @unique @map("match_id")
+  homeXg     Float?  @map("home_xg")
+  awayXg     Float?  @map("away_xg")
+  homeShots  Int?    @map("home_shots")
+  awayShots  Int?    @map("away_shots")
+  homeShotsOnTarget Int? @map("home_shots_on_target")
+  awayShotsOnTarget Int? @map("away_shots_on_target")
+  homePossession Int? @map("home_possession")
+  awayPossession Int? @map("away_possession")
+
+  match Match @relation(fields: [matchId], references: [id])
+
+  @@map("match_stats")
+}
+
+model EloHistory {
+  id        String   @id @default(uuid())
+  teamId    String   @map("team_id")
+  rating    Float
+  date      DateTime
+  createdAt DateTime @default(now()) @map("created_at")
+
+  team Team @relation(fields: [teamId], references: [id])
+
+  @@map("elo_history")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
