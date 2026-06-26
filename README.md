@@ -1,6 +1,6 @@
 # EvansVision
 
-> Piattaforma di previsioni calcistiche basata su Machine Learning, addestrata su 43.000+ partite reali delle top 5 leghe europee (Serie A, Premier League, La Liga, Bundesliga, Ligue 1) dal 2000 al 2025.
+> Piattaforma di previsioni calcistiche basata su Machine Learning, addestrata su 45.000+ partite reali delle top 5 leghe europee (Serie A, Premier League, La Liga, Bundesliga, Ligue 1) dal 1999 al 2026.
 
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
@@ -11,43 +11,56 @@
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![License](https://img.shields.io/badge/license-Educational-blue)](#-licenza)
 
+### [Prova l'app live](https://frontend-35p0101s-projects.vercel.app)
+
+---
+
+## Cos'e
+
+EvansVision e un'applicazione full-stack che combina un frontend moderno, un backend API e un servizio di Machine Learning per predire l'esito di partite di calcio. Non e un semplice generatore di numeri casuali: usa una rete neurale addestrata su decine di migliaia di partite reali, con feature ingegnerizzate a partire da statistiche di gioco, ratings Elo, forme recenti e scontri diretti.
+
+### Cosa puoi fare
+
+- **Predire un match** — seleziona due squadre e ricevi probabilita di vittoria/pareggio/sconfitta, risultato predetto e score
+- **Esplorare le squadre** — visualizza 220 squadre con rating Elo, xG, tiro di vittoria, forma recente (ultime 5/10 partite)
+- **Dashboard AI** — metriche del modello (accuracy, precision, recall, F1, matrice di confusione)
+- **Storico predizioni** — tutte le predizioni effettuate, con dettaglio squadre e probabilita
+
 ---
 
 ## Architettura
 
 ```
-┌─────────────┐     ┌──────────┐     ┌────────────┐
-│   Frontend  │────▶│  Backend │────▶│ AI Service │
-│  (Next.js)  │     │ (Express)│     │  (FastAPI) │
-│    :3000    │     │   :4000  │     │   :8000    │
-└─────────────┘     └────┬─────┘     └────────────┘
-                         │
-                    ┌────▼─────┐
-                    │PostgreSQL│
-                    │  :5432   │
-                    └──────────┘
+┌─────────────────┐     ┌──────────────┐     ┌─────────────────┐
+│    Frontend     │────▶│   Backend    │────▶│   AI Service    │
+│   (Next.js)     │     │  (Express)   │     │   (FastAPI)     │
+│  Vercel         │     │  Railway     │     │   Railway       │
+└─────────────────┘     └──────┬───────┘     └─────────────────┘
+                               │
+                          ┌────▼──────┐
+                          │ PostgreSQL │
+                          │  Railway   │
+                          └───────────┘
 ```
 
-Tre microservizi containerizzati che comunicano via REST. Il flusso tipico di una predizione:
+Tre microservizi che comunicano via REST. Il flusso di una predizione:
 
-1. L'utente seleziona due squadre dal **Frontend**.
-2. Il **Backend** recupera dati e statistiche dal DB, calcola feature aggiuntive (head-to-head, EWMA, forma) e inoltra all'**AI Service**.
-3. L'**AI Service** costruisce le 17 feature numeriche, le normalizza con `StandardScaler` e le passa alla rete neurale.
-4. La rete restituisce `[Home Win, Draw, Away Win]` con confidence e score predetto.
+1. L'utente seleziona due squadre dal **Frontend** (React, client-side).
+2. Il **Backend** recupera statistiche dal DB, calcola feature aggiuntive (H2H, EWMA, forma) e chiama l'**AI Service**.
+3. L'**AI Service** costruisce le 22 feature numeriche, le normalizza con `StandardScaler` e le passa alla rete neurale TensorFlow.
+4. La rete restituisce le probabilita `[Home Win, Draw, Away Win]` con confidence e score predetto.
 5. La predizione viene salvata nel database e mostrata all'utente.
 
 ---
 
-## Funzionalità
+## Live Deployment
 
-- **Predizioni** in tempo reale con 17 feature (medie mobili, EWMA, Elo rating, H2H)
-- **Rete neurale profonda** TensorFlow/Keras con BatchNorm + Dropout + L2
-- **Sistema Elo** implementato manualmente (K=32, baseline 1500)
-- **Dashboard** con metriche del modello e statistiche delle squadre
-- **Autenticazione** JWT con bcrypt
-- **Rate limiting** anti-bruteforce sugli endpoint di auth
-- **Logger strutturato** con redact automatico su token e password
-- **Docker Compose** per orchestrazione completa con healthchecks
+| Servizio | URL | Piattaforma |
+|----------|-----|-------------|
+| **Frontend** | [frontend-35p0101s-projects.vercel.app](https://frontend-35p0101s-projects.vercel.app) | Vercel |
+| **Backend API** | [backend-production-0a15.up.railway.app](https://backend-production-0a15.up.railway.app) | Railway |
+| **AI Service** | [evansvision-production.up.railway.app](https://evansvision-production.up.railway.app) | Railway |
+| **Database** | PostgreSQL su Railway (privato) | Railway |
 
 ---
 
@@ -64,7 +77,7 @@ Tre microservizi containerizzati che comunicano via REST. Il flusso tipico di un
 
 ---
 
-## Quick Start
+## Quick Start (locale con Docker)
 
 ### Prerequisiti
 
@@ -77,7 +90,9 @@ Tre microservizi containerizzati che comunicano via REST. Il flusso tipico di un
 git clone https://github.com/35p0101/EvansVision.git
 cd EvansVision
 cp .env.example .env
-# Modifica .env e imposta almeno JWT_SECRET (genera con: openssl rand -hex 32)
+# Genera un JWT_SECRET sicuro:
+openssl rand -hex 32
+# Incolla il valore nel .env
 ```
 
 ### 2. Avvia i container
@@ -96,17 +111,17 @@ docker compose up -d --build
 ### 3. Inizializza il database e allena il modello
 
 ```bash
-# Migrazioni Prisma (eseguite automaticamente da start.sh, ma puoi forzarle)
+# Migrazioni Prisma (eseguite automaticamente da start.sh)
 docker compose exec backend npx prisma db push
 
-# Seed con 16 squadre top europee + statistiche + 30 partite fittizie
+# Seed con 220 squadre + statistiche + 45.000+ partite
 docker compose exec backend npm run prisma:seed
 
-# Scarica dataset reale (~43.700 partite, ~3MB)
+# Scarica dataset reale (~2.6MB)
 docker compose exec ai-service python3 /app/app/datasets/download_data.py
 
 # Allena la rete neurale (~2-5 min)
-docker compose exec ai-service curl -s -X POST http://localhost:8000/api/v1/train \
+curl -X POST http://localhost:8000/api/v1/train \
   -H "Content-Type: application/json" \
   -d '{"data_path": "/app/datasets/matches.csv"}'
 ```
@@ -119,16 +134,57 @@ docker compose exec ai-service curl -s -X POST http://localhost:8000/api/v1/trai
 
 ## Performance del modello
 
-Con il dataset reale di 43.708 partite (2000-2025, 5 leghe):
+Con il dataset reale di 45.459 partite (1999-2026, 5 leghe):
 
-| Metrica           | Valore   |
-|-------------------|----------|
-| Accuracy          | ~46-51%  |
-| Test samples      | 4.355    |
-| Training samples  | 31.348   |
-| Feature count     | 17       |
-| Baseline casuale  | 33%      |
-| Bookmaker pro     | ~50-55%  |
+| Metrica           | Valore      |
+|-------------------|-------------|
+| Accuracy          | ~48%        |
+| Precision         | ~48%        |
+| Recall            | ~48%        |
+| F1 Score          | ~48%        |
+| Test samples      | 4.417       |
+| Training samples  | 31.802      |
+| Feature count     | 22          |
+| Baseline casuale  | 33%         |
+| Bookmaker pro     | ~50-55%     |
+
+Il modello supera la baseline casuale del 35% (da 33% a 48%), performing vicino ai livelli dei bookmaker professionali. La complessita del calcio rende difficile superare il 55%.
+
+---
+
+## Come funziona il Machine Learning
+
+### Le 22 feature
+
+Ogni partita viene convertita in un vettore di 22 numeri:
+
+| Categoria | Feature | Descrizione |
+|-----------|---------|-------------|
+| **Forma** | `pts_last_5`, `pts_last_10` | Punti medi ultime 5/10 partite |
+| **Attacco** | `gf_avg_5`, `gf_avg_10` | Gol fatti medi (ultime 5/10) |
+| **Difesa** | `ga_avg_5`, `ga_avg_10` | Gol subiti medi (ultime 5/10) |
+| **Momentum** | `ewma_pts` | Exponential Weighted Moving Average dei punti (alpha=0.3) |
+| **Efficienza** | `form_ppg` | Punti per partita nella stagione |
+| **Expected** | `xg_avg` | xG medio (expected goals) |
+| **Rating** | `elo` | Elo rating (K=32, baseline 1500) |
+| **H2H** | `h2h_home_wins`, `h2h_draws`, `h2h_away_wins` | Bilancio scontri diretti (ultime 5) |
+
+Ogni feature e calcolata sia per la squadra di casa che per quella ospite = 22 feature totali.
+
+### Architettura della rete
+
+```
+Input (22) → Dense(128) → BatchNorm → ReLU → Dropout(0.3)
+          → Dense(64)  → BatchNorm → ReLU → Dropout(0.3)
+          → Dense(32)  → BatchNorm → ReLU → Dropout(0.3)
+          → Dense(3)   → Softmax
+```
+
+- **Loss**: Sparse Categorical Crossentropy
+- **Optimizer**: Adam (lr=0.001, ridotto automaticamente)
+- **Class weights**: bilanciamento automatico per compensare la distribuzione sbilanciata (home wins ~46%, draws ~26%, away wins ~28%)
+- **Early stopping**: patience=10 epochs
+- **Riduzione LR**: factor=0.5, patience=5
 
 ---
 
@@ -136,47 +192,58 @@ Con il dataset reale di 43.708 partite (2000-2025, 5 leghe):
 
 ```
 EvansVision/
-├── ai-service/              # Python + TensorFlow
+├── ai-service/                  # Python + TensorFlow
 │   ├── app/
-│   │   ├── main.py          # FastAPI entry
-│   │   ├── controllers/     # Endpoint REST
-│   │   ├── models/          # Rete neurale Keras
-│   │   ├── services/        # Feature engineering, inferenza
-│   │   ├── training/        # Trainer
-│   │   └── datasets/        # Download dataset reale
-│   └── Dockerfile
+│   │   ├── main.py              # FastAPI entry point
+│   │   ├── controllers/         # Endpoint REST (predict, train, model-info)
+│   │   ├── models/              # Rete neurale Keras
+│   │   ├── services/            # Feature engineering, inferenza
+│   │   ├── training/            # Trainer (train, save, load)
+│   │   ├── config/              # Settings, path dei modelli
+│   │   └── datasets/            # Download dataset reale
+│   ├── saved_models/            # Modelli addestrati (.keras, .pkl)
+│   ├── Dockerfile
+│   └── requirements.txt
 │
-├── backend/                 # Node.js + Express + Prisma
+├── backend/                     # Node.js + Express + Prisma
 │   ├── src/
-│   │   ├── app.ts           # Express app (helmet, rate-limit, CORS, logger)
-│   │   ├── config/          # Config con validazione prod
-│   │   ├── controllers/     # Route handlers
-│   │   ├── services/        # Business logic
-│   │   ├── middleware/      # Auth, error handler
-│   │   ├── lib/logger.ts    # Pino con redact
-│   │   └── validators/      # Schemi Zod
+│   │   ├── app.ts               # Express (helmet, rate-limit, CORS, logger)
+│   │   ├── config/              # Config con validazione in produzione
+│   │   ├── controllers/         # Route handlers (teams, matches, predictions, auth)
+│   │   ├── services/            # Business logic (prediction.service, team.service)
+│   │   ├── middleware/          # Auth JWT, error handler
+│   │   ├── lib/logger.ts        # Pino con redact su secrets
+│   │   └── validators/          # Schemi Zod
 │   ├── prisma/
-│   │   ├── schema.prisma    # Modelli DB
-│   │   └── seed.ts          # Seed iniziale
-│   ├── tests/               # Jest + supertest
-│   └── Dockerfile
+│   │   ├── schema.prisma        # Modelli DB (Team, Match, Prediction, TeamStatistics)
+│   │   └── seed.ts              # Seed con 220 squadre + 45.000+ partite
+│   ├── tests/                   # Jest + supertest
+│   ├── start.sh                 # Entry script (migrate + start)
+│   ├── Dockerfile
+│   └── package.json
 │
 ├── apps/
-│   └── frontend/            # Next.js 14 App Router
-│       ├── app/             # Pages (dashboard, predict, teams)
-│       ├── components/      # UI components
+│   └── frontend/                # Next.js 14 App Router
+│       ├── app/
+│       │   ├── page.tsx         # Home (stats, top teams)
+│       │   ├── predict/page.tsx # Predizione match
+│       │   ├── teams/page.tsx   # Lista squadre
+│       │   └── dashboard/page.tsx # Dashboard AI
+│       ├── components/          # UI components
+│       ├── services/api.ts      # Axios client
+│       ├── vercel.json          # Config Vercel
 │       └── Dockerfile
 │
-├── documentazione/          # Docs dettagliate
-│   ├── README.md            # Documentazione tecnica completa
-│   ├── DEPLOY.md            # Guida deploy (Vercel + Railway + Supabase)
-│   ├── PRESENTAZIONE.md     # Pitch del progetto
-│   └── README_SPIEGAZIONE.md
+├── documentazione/              # Docs dettagliate
+│   ├── README.md                # Documentazione tecnica completa
+│   ├── DEPLOY.md                # Guida deploy step-by-step
+│   ├── PRESENTAZIONE.md         # Pitch del progetto
+│   └── README_SPIEGAZIONE.md    # Spiegazione discorsiva
 │
-├── docker-compose.yml          # Prod
-├── docker-compose.override.yml # Dev (--reload, mount sorgenti)
-├── .env.example                # Template variabili
-└── README.md                   # Questo file
+├── docker-compose.yml           # Prod
+├── docker-compose.override.yml  # Dev (hot reload, mount sorgenti)
+├── .env.example                 # Template variabili d'ambiente
+└── README.md                    # Questo file
 ```
 
 ---
@@ -190,16 +257,106 @@ Vedi [`.env.example`](.env.example) per la lista completa. Le principali:
 | `JWT_SECRET`          | _(obbligatoria in prod)_                                    | Genera con `openssl rand -hex 32`             |
 | `DATABASE_URL`        | `postgresql://evans:evans_secret@postgres:5432/evansvision` | URL Postgres                                  |
 | `CORS_ORIGIN`         | `http://localhost:3000`                                     | Origini ammesse (separate da virgola)         |
+| `AI_SERVICE_URL`      | `http://localhost:8000`                                     | URL del servizio AI                           |
 | `AI_ALLOWED_ORIGINS`  | `http://localhost:4000,http://backend:4000`                 | CORS lockdown sull'AI service                 |
 | `NODE_ENV`            | `production`                                                | `production` attiva validazioni di sicurezza  |
 | `BCRYPT_ROUNDS`       | `12`                                                        | Cost factor per hashing password              |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:4000`                                     | URL API per il frontend (esposto al browser)  |
+
+---
+
+## API Endpoints
+
+### Backend
+
+| Metodo | Endpoint                       | Descrizione                 | Auth |
+|--------|--------------------------------|-----------------------------|------|
+| GET    | `/api/v1/health`               | Health check                | No   |
+| GET    | `/api/v1/teams`                | Lista tutte le squadre      | No   |
+| GET    | `/api/v1/teams/:id`            | Dettaglio squadra + stats   | No   |
+| GET    | `/api/v1/matches`              | Ultime 50 partite           | No   |
+| GET    | `/api/v1/dashboard/stats`      | Stats dashboard (count)     | No   |
+| POST   | `/api/v1/predict`              | Predici un match            | No   |
+| GET    | `/api/v1/predictions`          | Storico predizioni          | No   |
+| GET    | `/api/v1/predictions/:matchId` | Predizione specifica        | No   |
+| GET    | `/api/v1/model-info`           | Metriche modello AI         | No   |
+| POST   | `/api/v1/auth/register`        | Registrazione utente        | No   |
+| POST   | `/api/v1/auth/login`           | Login + JWT token           | No   |
+
+### AI Service
+
+| Metodo | Endpoint               | Descrizione                  |
+|--------|------------------------|------------------------------|
+| GET    | `/`                    | Info servizio                |
+| GET    | `/api/v1/health`       | Health check                 |
+| POST   | `/api/v1/predict`      | Predizione (feature raw)     |
+| POST   | `/api/v1/train`        | Addestramento modello        |
+| GET    | `/api/v1/model-info`   | Metriche modello             |
+
+### Esempio predizione
+
+```bash
+curl -X POST https://backend-production-0a15.up.railway.app/api/v1/predict \
+  -H "Content-Type: application/json" \
+  -d '{"homeTeamId": "<uuid>", "awayTeamId": "<uuid>"}'
+```
+
+Risposta:
+```json
+{
+  "homeWin": 0.52,
+  "draw": 0.26,
+  "awayWin": 0.22,
+  "confidence": 0.52,
+  "predictedResult": "H",
+  "predictedScore": "2-1"
+}
+```
+
+---
+
+## Database
+
+Il schema Prisma definisce 4 entita principali:
+
+- **Team** — 220 squadre con nome, lega, paese, Elo rating
+- **TeamStatistics** — xG, xG Against, tiri, possesso, win rate, EWMA, forma
+- **Match** — 45.459 partite con data, stagione, risultato, goals
+- **Prediction** — storico predizioni con probabilita e risultato predetto
+
+Relazioni:
+- Team 1:1 TeamStatistics
+- Team 1:N Match (come home/away)
+- Team 1:N Prediction (come home/away)
+
+---
+
+## Deploy in produzione
+
+L'app e attualmente deployata su:
+
+| Servizio | Piattaforma | Note |
+|----------|-------------|------|
+| Frontend | **Vercel** | Auto-deploy da GitHub, edge network globale |
+| Backend + AI + DB | **Railway** | Deploy da GitHub, PostgreSQL managed |
+| Modelli ML | **Railway** | Salvati nel filesystem del container AI |
+
+### Deploy locale con Docker
+
+```bash
+docker compose up -d --build
+```
+
+### Deploy manuale
+
+Vedi [`documentazione/DEPLOY.md`](documentazione/DEPLOY.md) per la guida completa.
 
 ---
 
 ## Sviluppo
 
 ```bash
-# Modalità dev con hot reload (usa docker-compose.override.yml automaticamente)
+# Modalita dev con hot reload
 docker compose up
 
 # Backend in locale (richiede Postgres su :5432)
@@ -213,50 +370,14 @@ npm run typecheck
 # Test
 npm test
 
-# Prisma Studio (GUI DB)
+# Prisma Studio (GUI per il DB)
 npm run prisma:studio
+
+# Frontend in locale
+cd apps/frontend
+npm install
+npm run dev
 ```
-
----
-
-## API Endpoints
-
-### Backend (`:4000`)
-
-| Metodo | Endpoint                      | Descrizione                |
-|--------|-------------------------------|----------------------------|
-| GET    | `/api/v1/health`              | Health check               |
-| GET    | `/api/v1/teams`               | Lista squadre              |
-| GET    | `/api/v1/teams/:id`           | Dettaglio squadra          |
-| GET    | `/api/v1/teams/stats/summary` | Squadre con statistiche    |
-| GET    | `/api/v1/matches`             | Ultime 50 partite          |
-| GET    | `/api/v1/dashboard/stats`     | Statistiche dashboard      |
-| POST   | `/api/v1/predict`             | Predici un match           |
-| GET    | `/api/v1/predictions/:matchId`| Recupera predizione        |
-| GET    | `/api/v1/model-info`          | Info modello dall'AI       |
-| POST   | `/api/v1/auth/register`       | Registrazione              |
-| POST   | `/api/v1/auth/login`          | Login                      |
-
-### AI Service (`:8000`)
-
-| Metodo | Endpoint               | Descrizione                  |
-|--------|------------------------|------------------------------|
-| GET    | `/api/v1/health`       | Health check                 |
-| POST   | `/api/v1/predict`      | Predizione (stats raw)       |
-| POST   | `/api/v1/train`        | Addestramento modello        |
-| GET    | `/api/v1/model-info`   | Metriche modello             |
-
-Per dettagli sui payload, vedi [`documentazione/README.md`](documentazione/README.md#-api-endpoints).
-
----
-
-## Deploy in produzione
-
-Vedi [`documentazione/DEPLOY.md`](documentazione/DEPLOY.md) per la guida completa con:
-
-- **Supabase** per il database (free tier)
-- **Railway** per backend + AI service
-- **Vercel** per il frontend
 
 ---
 
@@ -273,7 +394,7 @@ Misure attive:
 - Container backend con utente non-root
 - Body JSON limitato a 100KB
 
-> Per produzione, **non** usare i default in `.env.example`. Genera `JWT_SECRET` con `openssl rand -hex 32` e usa credenziali DB dedicate.
+> **Non** usare i default in `.env.example` per produzione. Genera `JWT_SECRET` con `openssl rand -hex 32`.
 
 ---
 
@@ -286,20 +407,7 @@ npm run test:watch        # Watch mode
 npm run typecheck         # Solo type check, senza emit
 ```
 
-I test sono organizzati in `backend/tests/` e usano:
-- **Jest** + **ts-jest** per il runner TypeScript
-- **supertest** per i test end-to-end HTTP
-
----
-
-## Documentazione approfondita
-
-| Documento                                                          | Contenuto                                  |
-|--------------------------------------------------------------------|--------------------------------------------|
-| [documentazione/README.md](documentazione/README.md)               | Architettura, ML, feature, training, API   |
-| [documentazione/DEPLOY.md](documentazione/DEPLOY.md)               | Deploy step-by-step su Supabase + Railway + Vercel |
-| [documentazione/PRESENTAZIONE.md](documentazione/PRESENTAZIONE.md) | Pitch del progetto                         |
-| [documentazione/README_SPIEGAZIONE.md](documentazione/README_SPIEGAZIONE.md) | Spiegazione discorsiva                     |
+I test usano Jest + ts-jest + supertest per test end-to-end HTTP.
 
 ---
 
@@ -308,6 +416,17 @@ I test sono organizzati in `backend/tests/` e usano:
 - **[Football-Data.co.uk](https://www.football-data.co.uk)** — Risultati e statistiche storiche (Joseph Buchdahl)
 - **[ClubElo.com](http://clubelo.com)** — Elo ratings storici
 - **[xgabora/Club-Football-Match-Data-2000-2025](https://github.com/xgabora/Club-Football-Match-Data-2000-2025)** — Mirror cache unificato (475.000+ partite, 42 leghe)
+
+---
+
+## Documentazione approfondita
+
+| Documento                                                          | Contenuto                                  |
+|--------------------------------------------------------------------|--------------------------------------------|
+| [documentazione/README.md](documentazione/README.md)               | Architettura, ML, feature, training, API   |
+| [documentazione/DEPLOY.md](documentazione/DEPLOY.md)               | Deploy step-by-step su Railway + Vercel    |
+| [documentazione/PRESENTAZIONE.md](documentazione/PRESENTAZIONE.md) | Pitch del progetto                         |
+| [documentazione/README_SPIEGAZIONE.md](documentazione/README_SPIEGAZIONE.md) | Spiegazione discorsiva                     |
 
 ---
 
