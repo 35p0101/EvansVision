@@ -12,6 +12,9 @@ __pycache__/
 *.keras
 *.pkl
 *.h5
+# Keep trained models for deployment
+!ai-service/saved_models/*.keras
+!ai-service/saved_models/*.pkl
 .DS_Store
 *.log
 .turbo/
