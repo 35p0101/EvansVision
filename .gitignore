@@ -17,3 +17,6 @@ __pycache__/
 .turbo/
 .vscode/
 .idea/
+
+.vercel
+.env*

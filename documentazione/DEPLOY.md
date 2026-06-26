@@ -37,7 +37,7 @@ Piattaforme usate:
 3. Seleziona il repo `EvansVision`
 4. Nella schermata **Configure**:
    - **Root Directory**: clicca e scrivi `ai-service`
-5. Railway rileva Python e fa il build
+5. Railway rileva Python e fa il build usando il `railway.json` configurato
 6. Finito il deploy, apri il progetto → vedi un URL tipo `https://ai-service-production-xxxx.up.railway.app`
 7. **Variables** → aggiungi:
    ```
@@ -63,7 +63,7 @@ Prima di deployare il backend, devi aggiornare il riferimento all'AI Service:
 
 1. Sempre su Railway, **New Project** → **Deploy from GitHub repo** (stesso repo)
 2. **Root Directory**: scrivi `backend`
-3. Railway rileva Node.js e usa il Dockerfile
+3. Railway rileva Node.js e usa il Dockerfile + `railway.json` configurato
 4. Finito il deploy, apri il progetto → **Variables** → aggiungi TUTTE queste:
 
    ```
