@@ -23,5 +23,7 @@ RUN mkdir -p /app/saved_models /app/datasets
 
 EXPOSE 8000
 
+ENV PORT=8000
+
 # Prod: senza --reload. Dev: override in docker-compose.override.yml
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
